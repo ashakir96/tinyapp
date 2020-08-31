@@ -42,16 +42,33 @@ app.get('/urls/:shortURL', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
+// random alphanumeric string generator for shortURL
+
+function generateRandomString() {
+  let output = "";
+  let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 6; i++) {
+    output += characters[Math.round(Math.random() * 62)];
+  } return output;
+};
+
+// storing the users inputted value to the urlDatabase
+
 app.post('/urls', (req, res) => {
-  console.log(req.body);
-  res.send("ok");
-})
+  let temp = generateRandomString();
+  urlDatabase[temp] = req.body.longURL;
+  res.redirect(`/urls/${temp}`);
+});
+
+// redirecting user to main site
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
-})
+});
 
 
-function generateRandomString() {
-  return Math.random().toString(36).replace('0.', '').substr(5);
-}
