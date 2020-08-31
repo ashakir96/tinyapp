@@ -44,7 +44,7 @@ app.get('/urls/:shortURL', (req, res) => {
 
 // random alphanumeric string generator for shortURL
 
-function generateRandomString() {
+const generateRandomString = () => {
   let output = "";
   let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   for (let i = 0; i < 6; i++) {
