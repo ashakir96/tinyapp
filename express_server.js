@@ -44,7 +44,7 @@ app.get('/urls', (req, res) => {
 app.get('/urls/new', (req, res) => {
   let templateVars = {username: req.cookies["username"]};
   console.log(templateVars);
-  res.render('urls_new');
+  res.render('urls_new', templateVars);
 });
 
 // added path for short url to show which website it redirects to
@@ -83,7 +83,7 @@ app.get("/u/:shortURL", (req, res) => {
 app.post('/urls/:shortURL/delete', (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
-})
+});
 
 // updating an existing resource
 
@@ -91,7 +91,7 @@ app.post('/urls/:id', (req, res) => {
   let shortURL = req.params.id;
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect('/urls');
-})
+});
 
 
 app.listen(PORT, () => {
