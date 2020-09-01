@@ -25,7 +25,7 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-// using GET route to show the form
+// using GET route to show the form - Create
 
 app.get('/urls/new', (req, res) => {
   res.render('urls_new');
@@ -48,7 +48,7 @@ const generateRandomString = () => {
   } return output;
 };
 
-// storing the users inputted value to the urlDatabase
+// storing the users inputted value to the urlDatabase - Add
 
 app.post('/urls', (req, res) => {
   let temp = generateRandomString();
@@ -63,9 +63,17 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
-// route that removes URL resource
+// route that removes URL resource - Delete
 app.post('/urls/:shortURL/delete', (req, res) => {
   delete urlDatabase[req.params.shortURL];
+  res.redirect('/urls');
+})
+
+// updating an existing resource
+
+app.post('/urls/:id', (req, res) => {
+  let shortURL = req.params.id;
+  urlDatabase[shortURL] = req.body.longURL;
   res.redirect('/urls');
 })
 
