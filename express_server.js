@@ -2,7 +2,9 @@ const express = require('express');
 const app = express();
 const morgan = require('morgan');
 const PORT = 8080;
+const cookieParser = require('cookie-parser');
 
+app.use(cookieParser());
 app.set('view engine', 'ejs');
 
 const bodyParser = require('body-parser');
@@ -20,21 +22,35 @@ app.get('/', (req, res) => {
   res.send('Hello!');
 });
 
+// adding cookies
+
+app.post('/login', (req, res) => {
+  res.cookie('username', req.body.username);
+  res.redirect('/urls');
+});
+
+app.post('/logout', (req, res) => {
+  res.clearCookie('username');
+  res.redirect('/urls');
+});
+
 app.get('/urls', (req, res) => {
-  let templateVars = {urls: urlDatabase};
+  let templateVars = {urls: urlDatabase, username: req.cookies["username"]};
   res.render('urls_index', templateVars);
 });
 
 // using GET route to show the form - Create
 
 app.get('/urls/new', (req, res) => {
+  let templateVars = {username: req.cookies["username"]};
+  console.log(templateVars);
   res.render('urls_new');
 });
 
 // added path for short url to show which website it redirects to
 
 app.get('/urls/:shortURL', (req, res) => {
-  let templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL]};
+  let templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]};
   res.render('urls_show', templateVars);
 });
 
@@ -76,6 +92,7 @@ app.post('/urls/:id', (req, res) => {
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect('/urls');
 })
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}`);
