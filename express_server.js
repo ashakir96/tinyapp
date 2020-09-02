@@ -77,7 +77,6 @@ app.post('/logout', (req, res) => {
 
 app.get('/urls', (req, res) => {
   let templateVars = {urls: urlsForUser(req.cookies["user_id"]), user: users[req.cookies["user_id"]]};
-  console.log(urlsForUser(req.cookies["user_id"]));
   res.render('urls_index', templateVars);
 });
 
@@ -152,13 +151,14 @@ app.get('/urls/new', (req, res) => {
 // added path for short url to show which website it redirects to
 
 app.get('/urls/:shortURL', (req, res) => {
-  if (!users[req.cookies["user_id"]]) {
-    return res.redirect('/login');
+  if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
+    let templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]]};
+    res.render('urls_show', templateVars);;
+  } else {
+    res.statusCode = 403;
+    res.send('error: ', res.statusCode);
   }
-  let templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]]};
-  res.render('urls_show', templateVars);
 });
-
 
 // storing the users inputted value to the urlDatabase - Add
 
@@ -177,8 +177,13 @@ app.get("/u/:shortURL", (req, res) => {
 
 // route that removes URL resource - Delete
 app.post('/urls/:shortURL/delete', (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
+  if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect('/urls');
+  } else {
+    res.statusCode = 403;
+    res.send('error: ', res.statusCode);
+  }
 });
 
 // updating an existing resource
