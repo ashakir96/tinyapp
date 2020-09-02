@@ -18,6 +18,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+}
+
 app.get('/', (req, res) => {
   res.send('Hello!');
 });
@@ -43,9 +56,23 @@ app.get('/urls', (req, res) => {
 
 app.get('/urls/new', (req, res) => {
   let templateVars = {username: req.cookies["username"]};
-  console.log(templateVars);
   res.render('urls_new', templateVars);
 });
+
+// registration page
+
+app.get('/register', (req, res) => {
+  let templateVars = {username: req.cookies["username"]};
+  res.render('urls_register', templateVars);
+})
+
+app.post('/register', (req, res) => {
+  let tempId = generateRandomString();
+  res.cookie('user_id', tempId);
+  users[tempId] = {id: tempId, username: req.body.username, password: req.body.password}
+  res.redirect('/urls');
+})
+
 
 // added path for short url to show which website it redirects to
 
