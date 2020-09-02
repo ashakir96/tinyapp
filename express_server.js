@@ -4,13 +4,14 @@ const morgan = require('morgan');
 const PORT = 8080;
 const cookieParser = require('cookie-parser');
 
-app.use(cookieParser());
+
 app.set('view engine', 'ejs');
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({extended: true}));
 
 app.use(morgan('dev'));
+app.use(cookieParser());
 
 
 const urlDatabase = {
@@ -31,56 +32,6 @@ const users = {
   }
 }
 
-app.get('/', (req, res) => {
-  res.send('Hello!');
-});
-
-// adding cookies
-
-app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username);
-  res.redirect('/urls');
-});
-
-app.post('/logout', (req, res) => {
-  res.clearCookie('username');
-  res.redirect('/urls');
-});
-
-app.get('/urls', (req, res) => {
-  let templateVars = {urls: urlDatabase, username: req.cookies["username"]};
-  res.render('urls_index', templateVars);
-});
-
-// using GET route to show the form - Create
-
-app.get('/urls/new', (req, res) => {
-  let templateVars = {username: req.cookies["username"]};
-  res.render('urls_new', templateVars);
-});
-
-// registration page
-
-app.get('/register', (req, res) => {
-  let templateVars = {username: req.cookies["username"]};
-  res.render('urls_register', templateVars);
-})
-
-app.post('/register', (req, res) => {
-  let tempId = generateRandomString();
-  res.cookie('user_id', tempId);
-  users[tempId] = {id: tempId, username: req.body.username, password: req.body.password}
-  res.redirect('/urls');
-})
-
-
-// added path for short url to show which website it redirects to
-
-app.get('/urls/:shortURL', (req, res) => {
-  let templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], username: req.cookies["username"]};
-  res.render('urls_show', templateVars);
-});
-
 // random alphanumeric string generator for shortURL
 
 const generateRandomString = () => {
@@ -90,6 +41,83 @@ const generateRandomString = () => {
     output += characters[Math.round(Math.random() * 62)];
   } return output;
 };
+
+const findByEmail = (email) => {
+  for (let user in users) {
+    if (users[user].email === email) {
+      return true;
+    }
+  } return null;
+}
+
+// home page example
+
+app.get('/', (req, res) => {
+  res.send('Hello!');
+});
+
+// adding cookies
+
+app.post('/login', (req, res) => {
+  res.cookie('user', req.body.id);
+  res.redirect('/urls');
+});
+
+app.post('/logout', (req, res) => {
+  res.clearCookie('user_id');
+  res.redirect('/urls');
+});
+
+app.get('/urls', (req, res) => {
+  let templateVars = {urls: urlDatabase, user: users[req.cookies["user_id"]]};
+  res.render('urls_index', templateVars);
+});
+
+// using GET route to show the form - Create
+
+app.get('/urls/new', (req, res) => {
+  let templateVars = {user: users[req.cookies["user_id"]]};
+  res.render('urls_new', templateVars);
+});
+
+// registration page
+
+app.get('/register', (req, res) => {
+  let templateVars = {user: users[req.cookies["user_id"]]};
+  res.render('urls_register', templateVars);
+});
+
+app.post('/register', (req, res) => {
+  let email = req.body.email;
+  let password = req.body.password;
+  if (!email || !password) {
+    res.statusCode = 400;
+    return res.send('error ' + res.statusCode);
+  }
+  if (findByEmail(email)) {
+    res.statusCode = 400;
+    return res.send('error ' + res.statusCode);
+  }
+  let tempId = generateRandomString();
+  res.cookie('user_id', tempId);
+  users[tempId] = {id: tempId, email: email, password: password}
+  res.redirect('/urls');
+});
+
+//login page
+
+app.get('/login', (req, res) => {
+  let templateVars = {user: users[req.cookies["user_id"]]};
+  res.render('urls_login', templateVars);
+});
+
+// added path for short url to show which website it redirects to
+
+app.get('/urls/:shortURL', (req, res) => {
+  let templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]]};
+  res.render('urls_show', templateVars);
+});
+
 
 // storing the users inputted value to the urlDatabase - Add
 
