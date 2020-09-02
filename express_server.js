@@ -43,9 +43,10 @@ const generateRandomString = () => {
 };
 
 const findByEmail = (email) => {
-  for (let user in users) {
-    if (users[user].email === email) {
-      return true;
+  for (let userId in users) {
+    let user = users[userId];
+    if (user.email === email) {
+      return user;
     }
   } return null;
 }
@@ -57,11 +58,6 @@ app.get('/', (req, res) => {
 });
 
 // adding cookies
-
-app.post('/login', (req, res) => {
-  res.cookie('user', req.body.id);
-  res.redirect('/urls');
-});
 
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id');
@@ -94,10 +90,13 @@ app.post('/register', (req, res) => {
     res.statusCode = 400;
     return res.send('error ' + res.statusCode);
   }
-  if (findByEmail(email)) {
+  let foundUser = findByEmail(email);
+
+  if (foundUser) {
     res.statusCode = 400;
     return res.send('error ' + res.statusCode);
   }
+
   let tempId = generateRandomString();
   res.cookie('user_id', tempId);
   users[tempId] = {id: tempId, email: email, password: password}
@@ -109,6 +108,30 @@ app.post('/register', (req, res) => {
 app.get('/login', (req, res) => {
   let templateVars = {user: users[req.cookies["user_id"]]};
   res.render('urls_login', templateVars);
+});
+
+app.post('/login', (req, res) => {
+  let email = req.body.email;
+  let password = req.body.password;
+  if (!email || !password) {
+    res.statusCode = 400;
+    return res.send('error ' + res.statusCode);
+  }
+
+  let foundUser = findByEmail(email);
+
+  if (!foundUser) {
+    res.statusCode = 403;
+    return res.send('error ' + res.statusCode);
+  }
+
+  if (foundUser.password !== password){
+    res.statusCode = 403;
+    return res.send('error ' + res.statusCode);
+  }
+
+  res.cookie('user_id', foundUser.id);
+  res.redirect('/urls');
 });
 
 // added path for short url to show which website it redirects to
