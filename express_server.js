@@ -75,7 +75,7 @@ app.get('/', (req, res) => {
 // adding cookies
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('userID', req.body["userID"]);
+  res.session = null;
   res.redirect('/login');
 });
 
