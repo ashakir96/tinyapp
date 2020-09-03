@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
-const findByEmail = require('./helpers');
+const { findByEmail, generateRandomString, urlsForUser } = require('./helpers');
 
 app.set('view engine', 'ejs');
 
@@ -37,30 +37,10 @@ const users = {
 };
 
 
-// random alphanumeric string generator for shortURL
-
-const generateRandomString = () => {
-  let output = "";
-  let characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (let i = 0; i < 6; i++) {
-    output += characters[Math.round(Math.random() * 62)];
-  } return output;
-};
-
-const urlsForUser = (id) => {
-  let newData = {};
-  for (let item in urlDatabase) {
-    let user = urlDatabase[item].userID;
-    if (user === id) {
-      newData[item] = urlDatabase[item];
-    }
-  } return newData;
-};
-
 // home page example
 
 app.get('/', (req, res) => {
-  let user = users[req.session.userID];
+  const user = users[req.session.userID];
   if (!user) {
     return res.redirect('/login');
   } else {
@@ -76,11 +56,11 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  let user = users[req.session.userID];
+  const user = users[req.session.userID];
   if (!user) {
     return res.redirect('/login');
   }
-  let templateVars = {urls: urlsForUser(req.session.userID), user: user};
+  let templateVars = {urls: urlsForUser((req.session.userID), urlDatabase), user: user};
   res.render('urls_index', templateVars);
 });
 
@@ -104,9 +84,9 @@ app.post('/register', (req, res) => {
     return res.sendStatus(400);
   }
 
-  let tempId = generateRandomString();
+  const tempId = generateRandomString();
   req.session.userID = tempId;
-  let hashedPassword = bcrypt.hashSync(password, 10);
+  const hashedPassword = bcrypt.hashSync(password, 10);
   users[tempId] = {id: tempId, email: email, password: hashedPassword};
   res.redirect('/urls');
 });
@@ -164,11 +144,11 @@ app.get('/urls/:shortURL', (req, res) => {
 // storing the users inputted value to the urlDatabase - Add
 
 app.post('/urls', (req, res) => {
-  let user = users[req.session.userID];
+  const user = users[req.session.userID];
   if (!user) {
     return res.redirect('/login');
   }
-  let temp = generateRandomString();
+  const temp = generateRandomString();
   urlDatabase[temp] = {longURL: req.body.longURL, userID: req.session.userID};
   res.redirect(`/urls/${temp}`);
 });
@@ -176,7 +156,7 @@ app.post('/urls', (req, res) => {
 // redirecting user to main site
 
 app.get("/u/:shortURL", (req, res) => {
-  let longURL = urlDatabase[req.params.shortURL].longURL;
+  const longURL = urlDatabase[req.params.shortURL].longURL;
   let newURL = longURL.slice(0, 7);
   let httpsURL = longURL.slice(0,8);
   if (newURL === "http://" || httpsURL === "https://") {
@@ -188,7 +168,7 @@ app.get("/u/:shortURL", (req, res) => {
 
 // route that removes URL resource - Delete
 app.post('/urls/:shortURL/delete', (req, res) => {
-  let user = users[req.session.userID];
+  const user = users[req.session.userID];
   if (!user) {
     return res.redirect('/login');
   }
@@ -203,7 +183,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 // updating an existing resource
 
 app.post('/urls/:id', (req, res) => {
-  let user = users[req.session.userID];
+  const user = users[req.session.userID];
   if (!user) {
     return res.redirect('/login');
   }
