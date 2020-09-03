@@ -3,6 +3,7 @@ const app = express();
 const morgan = require('morgan');
 const PORT = 8080;
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 
 app.set('view engine', 'ejs');
@@ -19,18 +20,18 @@ const urlDatabase = {
   i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
-}
+};
 
 
 // random alphanumeric string generator for shortURL
@@ -50,17 +51,17 @@ const findByEmail = (email) => {
       return user;
     }
   } return null;
-}
+};
 
 const urlsForUser = (id) => {
-  newData = {};
+  let newData = {};
   for (let item in urlDatabase) {
     let user = urlDatabase[item].userID;
     if (user === id) {
       newData[item] = urlDatabase[item];
     }
   } return newData;
-}
+};
 
 // home page example
 
@@ -71,8 +72,8 @@ app.get('/', (req, res) => {
 // adding cookies
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
-  res.redirect('/urls');
+  res.clearCookie('user_id', req.body["user_id"]);
+  res.redirect('/login');
 });
 
 app.get('/urls', (req, res) => {
@@ -91,19 +92,19 @@ app.post('/register', (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   if (!email || !password) {
-    res.statusCode = 400;
-    return res.send('error ' + res.statusCode);
+    return res.sendStatus(400);
   }
+
   let foundUser = findByEmail(email);
 
   if (foundUser) {
-    res.statusCode = 400;
-    return res.send('error ' + res.statusCode);
+    return res.sendStatus(400);
   }
 
   let tempId = generateRandomString();
   res.cookie('user_id', tempId);
-  users[tempId] = {id: tempId, email: email, password: password}
+  let hashedPassword = bcrypt.hashSync(password, 10)
+  users[tempId] = {id: tempId, email: email, password: hashedPassword};
   res.redirect('/urls');
 });
 
@@ -118,20 +119,18 @@ app.post('/login', (req, res) => {
   let email = req.body.email;
   let password = req.body.password;
   if (!email || !password) {
-    res.statusCode = 400;
-    return res.send('error ' + res.statusCode);
+    return res.sendStatus(400);
   }
 
   let foundUser = findByEmail(email);
 
   if (!foundUser) {
-    res.statusCode = 403;
-    return res.send('error ' + res.statusCode);
+    return res.sendStatus(403);
   }
 
-  if (foundUser.password !== password){
-    res.statusCode = 403;
-    return res.send('error ' + res.statusCode);
+  let matched = bcrypt.compareSync(password, foundUser.password);
+  if (!matched) {
+    return res.sendStatus(403);
   }
 
   res.cookie('user_id', foundUser.id);
@@ -153,7 +152,7 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:shortURL', (req, res) => {
   if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
     let templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]]};
-    res.render('urls_show', templateVars);;
+    res.render('urls_show', templateVars);
   } else {
     res.statusCode = 403;
     res.send('error: ', res.statusCode);
