@@ -4,7 +4,7 @@ const morgan = require('morgan');
 const PORT = 8080;
 const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
-
+const findByEmail = require('./helpers');
 
 app.set('view engine', 'ejs');
 
@@ -45,15 +45,6 @@ const generateRandomString = () => {
   for (let i = 0; i < 6; i++) {
     output += characters[Math.round(Math.random() * 62)];
   } return output;
-};
-
-const findByEmail = (email) => {
-  for (let userId in users) {
-    let user = users[userId];
-    if (user.email === email) {
-      return user;
-    }
-  } return null;
 };
 
 const urlsForUser = (id) => {
@@ -98,7 +89,7 @@ app.post('/register', (req, res) => {
     return res.sendStatus(400);
   }
 
-  let foundUser = findByEmail(email);
+  let foundUser = findByEmail(email, users);
 
   if (foundUser) {
     return res.sendStatus(400);
@@ -125,7 +116,7 @@ app.post('/login', (req, res) => {
     return res.sendStatus(400);
   }
 
-  let foundUser = findByEmail(email);
+  let foundUser = findByEmail(email, users);
 
   if (!foundUser) {
     return res.sendStatus(403);
