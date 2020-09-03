@@ -157,8 +157,7 @@ app.get('/urls/:shortURL', (req, res) => {
     let templateVars = {shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.userID]};
     res.render('urls_show', templateVars);
   } else {
-    res.statusCode = 403;
-    res.send('error: ', res.statusCode);
+    res.sendStatus(403);
   }
 });
 
