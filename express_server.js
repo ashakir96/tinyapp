@@ -15,7 +15,7 @@ app.use(morgan('dev'));
 app.use(cookieSession({
   name: 'session',
   keys: ['secretKey']
-}))
+}));
 
 
 const urlDatabase = {
@@ -60,7 +60,12 @@ const urlsForUser = (id) => {
 // home page example
 
 app.get('/', (req, res) => {
-  res.send('Hello!');
+  let user = users[req.session.userID];
+  if (!user) {
+    return res.redirect('/login');
+  } else {
+    res.redirect('/urls');
+  }
 });
 
 // adding cookies
@@ -71,7 +76,11 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  let templateVars = {urls: urlsForUser(req.session.userID), user: users[req.session.userID]};
+  let user = users[req.session.userID];
+  if (!user) {
+    return res.redirect('/login');
+  }
+  let templateVars = {urls: urlsForUser(req.session.userID), user: user};
   res.render('urls_index', templateVars);
 });
 
@@ -97,7 +106,7 @@ app.post('/register', (req, res) => {
 
   let tempId = generateRandomString();
   req.session.userID = tempId;
-  let hashedPassword = bcrypt.hashSync(password, 10)
+  let hashedPassword = bcrypt.hashSync(password, 10);
   users[tempId] = {id: tempId, email: email, password: hashedPassword};
   res.redirect('/urls');
 });
@@ -155,6 +164,10 @@ app.get('/urls/:shortURL', (req, res) => {
 // storing the users inputted value to the urlDatabase - Add
 
 app.post('/urls', (req, res) => {
+  let user = users[req.session.userID];
+  if (!user) {
+    return res.redirect('/login');
+  }
   let temp = generateRandomString();
   urlDatabase[temp] = {longURL: req.body.longURL, userID: req.session.userID};
   res.redirect(`/urls/${temp}`);
@@ -163,27 +176,44 @@ app.post('/urls', (req, res) => {
 // redirecting user to main site
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+  let longURL = urlDatabase[req.params.shortURL].longURL;
+  let newURL = longURL.slice(0, 7);
+  let httpsURL = longURL.slice(0,8);
+  if (newURL === "http://" || httpsURL === "https://") {
+    res.redirect(longURL);
+  } else {
+    res.redirect("http://" + longURL);
+  }
 });
 
 // route that removes URL resource - Delete
 app.post('/urls/:shortURL/delete', (req, res) => {
+  let user = users[req.session.userID];
+  if (!user) {
+    return res.redirect('/login');
+  }
   if (req.session.userID === urlDatabase[req.params.shortURL].userID) {
     delete urlDatabase[req.params.shortURL];
     res.redirect('/urls');
   } else {
-    res.statusCode = 403;
-    res.send('error: ', res.statusCode);
+    return res.sendStatus(403);
   }
 });
 
 // updating an existing resource
 
 app.post('/urls/:id', (req, res) => {
-  let shortURL = req.params.id;
-  urlDatabase[shortURL].longURL = req.body.longURL;
-  res.redirect('/urls');
+  let user = users[req.session.userID];
+  if (!user) {
+    return res.redirect('/login');
+  }
+  if (req.session.userID === urlDatabase[req.params.id].userID) {
+    let shortURL = req.params.id;
+    urlDatabase[shortURL].longURL = req.body.longURL;
+    return res.redirect('/urls');
+  } else {
+    return res.sendStatus(403);
+  }
 });
 
 
